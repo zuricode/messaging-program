@@ -1,4 +1,2 @@
 ﻿  server.cpp
-C:\Users\Admin\GitHub\messaging-program\server.cpp(26,11): warning C4244: 'initializing': conversion from 'SOCKET' to 'int', possible loss of data
-C:\Users\Admin\GitHub\messaging-program\server.cpp(68,17): warning C4244: 'initializing': conversion from 'SOCKET' to 'int', possible loss of data
-  Revised Messaging Program.vcxproj -> C:\Users\Admin\GitHub\messaging-program\x64\Debug\Revised Messaging Program.exe
+  Revised Messaging Program.vcxproj -> C:\Users\Admin\GitHub\messaging-program\Server\x64\Debug\Revised Messaging Program.exe
