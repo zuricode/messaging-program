@@ -6,95 +6,149 @@
 //#include "../stdafx.h"
 
 #pragma comment (lib, "ws2_32.lib")
+const int BUF_SIZE = 1025;
 
 using namespace std;
+
+void showBanner();
+void selectIPPort(string&, int&);
+void winsockInit(WSADATA&);
+void clientSocketInit(SOCKET&, const string&, const int&);
+void sendMessage(SOCKET&);
 
 int main() {
 
 	WSADATA wsaData;
+	SOCKET clientSocket = INVALID_SOCKET;
+	string ip = "";
+	int port = -1;
 
-	int err = WSAStartup(MAKEWORD(2, 2), &wsaData);
+	showBanner();
+	selectIPPort(ip, port);
+	winsockInit(wsaData);
+	clientSocketInit(clientSocket, ip, port);
+	sendMessage(clientSocket);
 
-	if (err) {
-		cout << "Error: Winsock2.dll cuold not be initialised." << endl;
+	closesocket(clientSocket);
+	WSACleanup();
+	return 0;
+
+}
+
+void showBanner() {
+
+	cout << "====================================================" << endl;
+	cout << "=====                                          =====" << endl;
+	cout << "=====              C L I E N T                 =====" << endl;
+	cout << "=====                                          =====" << endl;
+	cout << "====================================================" << endl;
+	cout << endl;
+
+}
+
+void selectIPPort(string& ip, int& port) {
+
+	int choice;
+
+	do {
+
+		cout << "[1]" << "\t" << "Default configuration (127.0.0.1:56789)" << endl;
+		cout << "[2]" << "\t" << "Use a custom IP address and port number" << endl;
+		cout << endl;
+
+		cout << "Enter 1 or 2 as your selection: ";
+		cin >> choice;
+		cin.ignore(6000, '\n');
+
+		switch (choice) {
+		case 1:
+			ip = "127.0.0.1";
+			port = 56789;
+			break;
+		case 2:
+			cout << "Server IP Address: ";
+			getline(cin, ip);
+			cout << "Server Port: ";
+			cin >> port;
+			cin.ignore(6000, '\n');
+			break;
+		default:
+			cout << "ERROR: Invalid section!" << endl;
+			cout << endl;
+			break;
+		}
+
+	} while (choice != 1 && choice != 2);
+
+	cout << endl;
+
+}
+
+void winsockInit(WSADATA& wsaData) {
+
+	if (WSAStartup(MAKEWORD(2, 2), &wsaData)) {
+		cout << "Error: Winsock.dll could not be initialised." << endl;
 		cout << "Code: " << WSAGetLastError() << endl;
 		WSACleanup();
-		return -1;
+		exit(EXIT_FAILURE);
 	}
 
+}
 
-	SOCKET sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+void clientSocketInit(SOCKET& clientSocket, const string& ip, const int& port) {
 
-	if (sock == INVALID_SOCKET) {
+	clientSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+
+	if (clientSocket == INVALID_SOCKET) {
 		cout << "Error: Client socket could not be created." << endl;
 		cout << "Code: " << WSAGetLastError() << endl;
-		closesocket(sock);
+		closesocket(clientSocket);
 		WSACleanup();
-		return -1;
+		exit(EXIT_FAILURE);
 	}
-
-	string ip;
-	int port;
-
-	cout << "Server IP Address: ";
-	getline(cin, ip);
-
-	cout << "Server Port: ";
-	cin >> port;
-	cin.ignore(6000, '\n');
-
-	cout << endl;
 
 	sockaddr_in addr;
-
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(port);
-
-	wstring temp = wstring(ip.begin(), ip.end());
-	LPCWSTR ip_addr = temp.c_str();
 	inet_pton(AF_INET, ip.c_str(), &addr.sin_addr.s_addr);
 
-	cout << "Attempting conneciton to server (" << ip << ":" << port << ")..." << endl;
-
-	err = connect(sock, (SOCKADDR*)&addr, sizeof(addr));
-
-	if (err == SOCKET_ERROR) {
+	if (connect(clientSocket, (SOCKADDR*)&addr, sizeof(addr)) == SOCKET_ERROR) {
 		cout << "Error: Client socket could not connect to " << ip << ":" << port << endl;
 		cout << "Code: " << WSAGetLastError() << endl;
-		closesocket(sock);
+		closesocket(clientSocket);
 		WSACleanup();
-		return -1;
-
+		exit(EXIT_FAILURE);
 	}
 	else {
-		cout << "Client socket has successfully connected to " << ip << ":" << port << endl;
+		cout << "You are connected to the server on " << ip << ":" << port << endl;
 	}
 
 	cout << endl;
 
-	char sBuffer[1025] = "";
+}
+
+void sendMessage(SOCKET& clientSocket) {
+
+	string sBuffer;
 	char rConfBuffer[128] = "";
 
-	cout << "Send a message: ";
-	cin.getline(sBuffer, 1025);
+	cout << "Send a message (\"EXIT\" to disconnect): ";
+	getline(cin, sBuffer);
 
-	cout << endl;
-
-	int byteCount = send(sock, sBuffer, sizeof(sBuffer), 0);
+	int byteCount = send(clientSocket, sBuffer.c_str(), sBuffer.size() + 1, 0);
 
 	if (byteCount <= 0) {
 		cout << "Error: No data was sent." << endl;
 		cout << "Code: " << WSAGetLastError() << endl;
-		closesocket(sock);
+		closesocket(clientSocket);
 		WSACleanup();
-		return -1;
+		exit(EXIT_FAILURE);
 	}
 	else {
-		cout << "Data was sent from " << ip << ":" << port << endl;
-		cout << "Bytes sent: " << byteCount << endl;
-		byteCount = recv(sock, rConfBuffer, sizeof(rConfBuffer), 0);
+
+		byteCount = recv(clientSocket, rConfBuffer, sizeof(rConfBuffer), 0);
 		if (byteCount <= 0) {
-			cout << "Error: Confirmation message was not recevied." << endl;
+			cout << "Error: Server did not receive your message." << endl;
 		}
 		else {
 			cout << rConfBuffer << endl;
@@ -102,9 +156,7 @@ int main() {
 
 	}
 
-	closesocket(sock);
-	WSACleanup();
-	return 0;
+	cout << endl;
 
 
 }

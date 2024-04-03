@@ -9,19 +9,95 @@
 
 using namespace std;
 
+void showBanner();
+void selectIPPort(string&, int&);
+void winsockInit(WSADATA&);
+void socketInit(SOCKET&, SOCKET&, const string&, const int&);
+void receiveMessage(SOCKET&, const string&);
+
+int main() {
+
+	WSADATA wsaData;
+	SOCKET serverSocket = INVALID_SOCKET;
+	SOCKET acceptSocket = INVALID_SOCKET;
+	const string CONFIRMATION = "Received";
+	char rBuffer[1025] = "";
+	string ip = "";
+	int port = -1;
+
+	showBanner();
+	selectIPPort(ip, port);
+	winsockInit(wsaData);
+	socketInit(serverSocket, acceptSocket, ip, port);
+	receiveMessage(acceptSocket, CONFIRMATION);
+
+	closesocket(acceptSocket);
+	closesocket(serverSocket);
+	WSACleanup();
+
+	return 0;
+
+}
+
+void showBanner() {
+
+	cout << "====================================================" << endl;
+	cout << "=====                                          =====" << endl;
+	cout << "=====              S E R V E R                 =====" << endl;
+	cout << "=====                                          =====" << endl;
+	cout << "====================================================" << endl;
+	cout << endl;
+
+}
+
 void winsockInit(WSADATA& wsaData) {
 
-	int err = WSAStartup(MAKEWORD(2, 2), &wsaData);
-
-	if (err != 0) {
+	if (WSAStartup(MAKEWORD(2, 2), &wsaData)) {
 		cout << "Winsock.dll could not be initialized" << endl;
 		WSACleanup();
 		exit(EXIT_FAILURE);
 	}
 
 }
+void selectIPPort(string& ip, int& port) {
 
-void socketInit(SOCKET& serverSocket, SOCKET& acceptSocket) {
+	int choice;
+
+	do {
+
+		cout << "[1]" << "\t" << "Default configuration (127.0.0.1:56789)" << endl;
+		cout << "[2]" << "\t" << "Custom IP address & port number" << endl;
+		cout << endl;
+
+		cout << "Enter 1 or 2 as your selection: ";
+		cin >> choice;
+		cin.ignore(6000, '\n');
+
+		switch (choice) {
+		case 1:
+			ip = "127.0.0.1";
+			port = 56789;
+			break;
+		case 2:
+			cout << "Server IP Address: ";
+			getline(cin, ip);
+			cout << "Server Port: ";
+			cin >> port;
+			cin.ignore(6000, '\n');
+			break;
+		default:
+			cout << "ERROR: Invalid section!" << endl;
+			cout << endl;
+			break;
+		}
+
+	} while (choice != 1 && choice != 2);
+
+	cout << endl;
+
+}
+
+void socketInit(SOCKET& serverSocket, SOCKET& acceptSocket, const string& ip, const int& port) {
 
 	serverSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
@@ -33,19 +109,9 @@ void socketInit(SOCKET& serverSocket, SOCKET& acceptSocket) {
 		exit(EXIT_FAILURE);
 	}
 
-	string ip;
-	cout << "Server IP Address: ";
-	getline(cin, ip);
-
-	int port;
-	cout << "Server Port: ";
-	cin >> port;
-	cin.ignore(6000, '\n');
-
 	sockaddr_in addr;
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(port);
-
 	inet_pton(addr.sin_family, ip.c_str(), &addr.sin_addr.s_addr);
 
 	if (bind(serverSocket, (SOCKADDR*)&addr, sizeof(addr)) == SOCKET_ERROR) {
@@ -66,23 +132,23 @@ void socketInit(SOCKET& serverSocket, SOCKET& acceptSocket) {
 		exit(EXIT_FAILURE);
 	}
 	else {
-		cout << "Server socket will now listen for incoming data on " << ip << ":" << port << ")..." << endl;
+		cout << "Server socket will now listen for incoming data on (" << ip << ":" << port << ")..." << endl;
 	}
+
+	cout << endl;
 
 	acceptSocket = accept(serverSocket, NULL, NULL);
 
 	if (acceptSocket == INVALID_SOCKET) {
 		cout << "Error: Accept socket could not be initialised." << endl;
 	}
-	else {
-		cout << "Accept socket was successfully initialised." << endl;
-	}
-
-	cout << endl;
 
 }
 
-void receiveData(SOCKET& acceptSocket, const char* CONFIRMATION) {
+void receiveMessage(SOCKET& acceptSocket, const string& CONFIRMATION) {
+
+	cout << "Waiting for message(s)..." << endl;
+	cout << endl;
 
 	char rBuffer[1025] = "";
 
@@ -94,38 +160,12 @@ void receiveData(SOCKET& acceptSocket, const char* CONFIRMATION) {
 		WSACleanup();
 	}
 	else {
-		cout << "Data has been received! Content length: " << byteCount << endl;
-		cout << "Data: " << rBuffer << endl;
-		byteCount = send(acceptSocket, CONFIRMATION, sizeof(CONFIRMATION), 0);
+		cout << "Client: " << rBuffer << endl;
+		byteCount = send(acceptSocket, CONFIRMATION.c_str(), CONFIRMATION.length() + 1, 0);
 		if (byteCount <= 0) {
 			cout << "Error: Confirmation message could not be sent." << endl;
 		}
-		else {
-			cout << "Confirmation message was sent to the client." << endl;
-		}
+
 	}
-
-}
-
-int main() {
-
-	WSADATA wsaData;
-	SOCKET serverSocket = INVALID_SOCKET;
-	SOCKET acceptSocket = INVALID_SOCKET;
-	char sConfBuffer[128] = "Server Confirmation Receipt: Message was received";
-	char rBuffer[1025] = "";
-
-	winsockInit(wsaData);
-	socketInit(serverSocket, acceptSocket);
-
-	int byteCount = recv(acceptSocket, rBuffer, sizeof(rBuffer), 0);
-
-	receiveData(acceptSocket, sConfBuffer);
-
-	closesocket(acceptSocket);
-	closesocket(serverSocket);
-	WSACleanup();
-
-	return 0;
 
 }
