@@ -1,6 +1,5 @@
 #include<iostream>
 #include<string>
-#include<limits>
 #include<winsock2.h>
 #include<ws2tcpip.h>
 #include<tchar.h>
@@ -29,7 +28,10 @@ int main() {
 	selectIPPort(ip, port);
 	winsockInit(wsaData);
 	socketInit(serverSocket, acceptSocket, ip, port);
-	receiveMessage(acceptSocket, CONFIRMATION);
+
+	while (1) {
+		receiveMessage(acceptSocket, CONFIRMATION);
+	}
 
 	closesocket(acceptSocket);
 	closesocket(serverSocket);
@@ -145,14 +147,14 @@ void socketInit(SOCKET& serverSocket, SOCKET& acceptSocket, const string& ip, co
 
 }
 
-void receiveMessage(SOCKET& acceptSocket, const string& CONFIRMATION) {
+void receiveMessage(SOCKET& s, const string& CONFIRMATION) {
 
 	cout << "Waiting for message(s)..." << endl;
 	cout << endl;
 
 	char rBuffer[1025] = "";
 
-	int byteCount = recv(acceptSocket, rBuffer, sizeof(rBuffer), 0);
+	int byteCount = recv(s, rBuffer, sizeof(rBuffer), 0);
 
 	if (byteCount <= 0) {
 		cout << "Error: No data was able to received." << endl;
@@ -160,8 +162,19 @@ void receiveMessage(SOCKET& acceptSocket, const string& CONFIRMATION) {
 		WSACleanup();
 	}
 	else {
-		cout << "Client: " << rBuffer << endl;
-		byteCount = send(acceptSocket, CONFIRMATION.c_str(), CONFIRMATION.length() + 1, 0);
+
+		string rData(rBuffer);
+
+		if (rData == "exit" || rData == "EXIT") {
+			cout << "Client has disconnected from the chat..." << endl;
+			cout << "Leaving the chatroom and closing the program..." << endl;
+			closesocket(s);
+			WSACleanup();
+			exit(EXIT_SUCCESS);
+		}
+
+		cout << rData << endl;
+		byteCount = send(s, CONFIRMATION.c_str(), CONFIRMATION.length() + 1, 0);
 		if (byteCount <= 0) {
 			cout << "Error: Confirmation message could not be sent." << endl;
 		}

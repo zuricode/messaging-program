@@ -3,7 +3,6 @@
 #include<winsock2.h>
 #include<ws2tcpip.h>
 #include<tchar.h>
-//#include "../stdafx.h"
 
 #pragma comment (lib, "ws2_32.lib")
 const int BUF_SIZE = 1025;
@@ -27,7 +26,10 @@ int main() {
 	selectIPPort(ip, port);
 	winsockInit(wsaData);
 	clientSocketInit(clientSocket, ip, port);
-	sendMessage(clientSocket);
+
+	while (1) {
+		sendMessage(clientSocket);
+	}
 
 	closesocket(clientSocket);
 	WSACleanup();
@@ -127,26 +129,35 @@ void clientSocketInit(SOCKET& clientSocket, const string& ip, const int& port) {
 
 }
 
-void sendMessage(SOCKET& clientSocket) {
+void sendMessage(SOCKET& s) {
 
 	string sBuffer;
-	char rConfBuffer[128] = "";
+	string disconnect = "Client has disconnected from the chat...\n";
+	char rConfBuffer[64] = "";
 
 	cout << "Send a message (\"EXIT\" to disconnect): ";
 	getline(cin, sBuffer);
 
-	int byteCount = send(clientSocket, sBuffer.c_str(), sBuffer.size() + 1, 0);
+	int byteCount = send(s, sBuffer.c_str(), sBuffer.size() + 1, 0);
 
 	if (byteCount <= 0) {
 		cout << "Error: No data was sent." << endl;
 		cout << "Code: " << WSAGetLastError() << endl;
-		closesocket(clientSocket);
+		closesocket(s);
 		WSACleanup();
 		exit(EXIT_FAILURE);
 	}
 	else {
 
-		byteCount = recv(clientSocket, rConfBuffer, sizeof(rConfBuffer), 0);
+		if (sBuffer == "EXIT" || sBuffer == "exit") {
+			cout << endl;
+			cout << "Leaving the chatroom and closing the program..." << endl;
+			closesocket(s);
+			WSACleanup();
+			exit(EXIT_SUCCESS);
+		}
+
+		byteCount = recv(s, rConfBuffer, sizeof(rConfBuffer), 0);
 		if (byteCount <= 0) {
 			cout << "Error: Server did not receive your message." << endl;
 		}

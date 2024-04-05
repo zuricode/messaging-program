@@ -27,6 +27,7 @@
     <ProjectGuid>{7264dd8e-8add-4ee2-b757-94ebcb8c56bd}</ProjectGuid>
     <RootNamespace>RevisedMessagingProgram</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>Server - Messaging Program</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
