@@ -1,0 +1,3 @@
+﻿  main.cpp
+C:\Users\Admin\GitHub\messaging-program\All-In-One\main.cpp(255,59): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+  All-In-One.vcxproj -> C:\Users\Admin\GitHub\messaging-program\All-In-One\x64\Debug\All-In-One.exe

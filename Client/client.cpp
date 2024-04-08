@@ -1,19 +1,23 @@
 #include<iostream>
 #include<string>
+#include<thread>
 #include<winsock2.h>
 #include<ws2tcpip.h>
 #include<tchar.h>
 
 #pragma comment (lib, "ws2_32.lib")
-const int BUF_SIZE = 1025;
 
 using namespace std;
+
+const int BUF_SIZE = 1025;
+const string CONFIRMATION = "\t\t\tReceived";
 
 void showBanner();
 void selectIPPort(string&, int&);
 void winsockInit(WSADATA&);
 void clientSocketInit(SOCKET&, const string&, const int&);
 void sendMessage(SOCKET&);
+void receiveMessage(SOCKET&);
 
 int main() {
 
@@ -27,12 +31,12 @@ int main() {
 	winsockInit(wsaData);
 	clientSocketInit(clientSocket, ip, port);
 
-	while (1) {
-		sendMessage(clientSocket);
-	}
+	thread recvThread(&sendMessage, ref(clientSocket));
+	receiveMessage(clientSocket);
 
 	closesocket(clientSocket);
 	WSACleanup();
+	cin.get();
 	return 0;
 
 }
@@ -132,42 +136,63 @@ void clientSocketInit(SOCKET& clientSocket, const string& ip, const int& port) {
 void sendMessage(SOCKET& s) {
 
 	string sBuffer;
-	string disconnect = "Client has disconnected from the chat...\n";
-	char rConfBuffer[64] = "";
 
-	cout << "Send a message (\"EXIT\" to disconnect): ";
-	getline(cin, sBuffer);
+	while (1) {
 
-	int byteCount = send(s, sBuffer.c_str(), sBuffer.size() + 1, 0);
+		char rTemp[64] = "";
 
-	if (byteCount <= 0) {
-		cout << "Error: No data was sent." << endl;
-		cout << "Code: " << WSAGetLastError() << endl;
-		closesocket(s);
-		WSACleanup();
-		exit(EXIT_FAILURE);
-	}
-	else {
+		getline(cin, sBuffer);
 
-		if (sBuffer == "EXIT" || sBuffer == "exit") {
-			cout << endl;
+		int byteCount = send(s, sBuffer.c_str(), sBuffer.size() + 1, 0);
+
+		if (byteCount <= 0) {
+			cout << "Error " << WSAGetLastError() << " : You message could not be sent. Please try again." << endl;
+		}
+
+		if (sBuffer == "exit" || sBuffer == "EXIT") {
 			cout << "Leaving the chatroom and closing the program..." << endl;
 			closesocket(s);
 			WSACleanup();
+			cin.get();
 			exit(EXIT_SUCCESS);
-		}
-
-		byteCount = recv(s, rConfBuffer, sizeof(rConfBuffer), 0);
-		if (byteCount <= 0) {
-			cout << "Error: Server did not receive your message." << endl;
-		}
-		else {
-			cout << rConfBuffer << endl;
 		}
 
 	}
 
-	cout << endl;
+}
 
+void receiveMessage(SOCKET& s) {
+
+	while (1) {
+
+		char rBuffer[1025] = "";
+
+		int byteCount = recv(s, rBuffer, sizeof(rBuffer), 0);
+
+		if (byteCount <= 0) {
+			cout << "Error: No data was able to received." << endl;
+			cout << "Code: " << WSAGetLastError() << endl;
+			WSACleanup();
+		}
+
+		else {
+
+			string rData(rBuffer);
+
+			cout << "Their message: " << rData << endl;
+
+			if (rData == "exit" || rData == "EXIT") {
+				cout << "Client has disconnected from the chat..." << endl;
+				cout << "Leaving the chatroom and closing the program..." << endl;
+				closesocket(s);
+				WSACleanup();
+				cin.get();
+				exit(EXIT_SUCCESS);
+			}
+
+		}
+
+	}
 
 }
+
