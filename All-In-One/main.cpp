@@ -41,18 +41,24 @@ int main() {
 
 	if (menu_choice == 1) {
 		createServerSocket(server, acceptSocket, ip, port);
-		thread recvThread(&sendMessage, ref(acceptSocket));
+		thread sendThread(&sendMessage, ref(acceptSocket));
 		receiveMessage(acceptSocket);
-		closesocket(acceptSocket);
-		closesocket(server);
-	}
-	else {
-		client = createClientSocket(ip, port);
-		thread recvThread(&sendMessage, ref(client));
-		receiveMessage(client);
-		closesocket(client);
+		sendThread.join();
+		shutdown(acceptSocket, 2);
+		shutdown(server, 2);
 	}
 
+	else {
+		client = createClientSocket(ip, port);
+		thread sendThread(&sendMessage, ref(client));
+		receiveMessage(client);
+		sendThread.join();
+		shutdown(client, 2);
+	}
+
+	closesocket(acceptSocket);
+	closesocket(server);
+	closesocket(client);
 	WSACleanup();
 	return 0;
 
@@ -242,24 +248,31 @@ void selectIPPort(string& ip, int& port) {
 
 void sendMessage(SOCKET& s) {
 
-	string sBuffer;
+	string sBuffer, sMessage;
+	string username;
+
+	cout << "Enter your username: ";
+	getline(cin, username);
 
 	do {
 
 		char rTemp[64] = "";
 
-		getline(cin, sBuffer);
+		getline(cin, sMessage);
 
-		exit_string = sBuffer;
+		sBuffer = username + ": " + sMessage;
 
 		int byteCount = send(s, sBuffer.c_str(), sBuffer.size() + 1, 0);
 
 		if (byteCount <= 0) {
-			cout << "Error " << WSAGetLastError() << " : You message could not be sent. Please try again." << endl;
+			cout << "Error " << WSAGetLastError() << " : Your message could not be sent. Please try again." << endl;
 		}
 
+		exit_string = sMessage;
+
 		if (exit_string == "exit" || exit_string == "EXIT") {
-			cout << "Leaving the chatroom and closing the program..." << endl;
+			cout << "You are leaving the chatroom and closing the program..." << endl;
+			send(s, exit_string.c_str(), exit_string.length() + 1, 0);
 		}
 
 	} while(exit_string != "exit" && exit_string != "EXIT");
@@ -290,12 +303,15 @@ void receiveMessage(SOCKET& s) {
 
 			exit_string = rBuffer;
 
-			cout << "Their message: " << rBuffer << endl;
-
 			if (exit_string == "exit" || exit_string == "EXIT") {
 				cout << "Client has disconnected from the chat..." << endl;
-				cout << "Leaving the chatroom and closing the program..." << endl;
+				cout << "You are leaving the chatroom and closing the program..." << endl;
+				send(s, exit_string.c_str(), exit_string.length() + 1, 0);
 			}
+
+			else {
+				cout << rBuffer << endl;
+			}		
 
 		}
 
