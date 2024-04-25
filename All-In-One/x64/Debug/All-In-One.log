@@ -1,5 +1,5 @@
-﻿  main.cpp
-C:\Users\Admin\GitHub\messaging-program\All-In-One\main.cpp(265,59): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
-C:\Users\Admin\GitHub\messaging-program\All-In-One\main.cpp(275,54): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
-C:\Users\Admin\GitHub\messaging-program\All-In-One\main.cpp(309,55): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+﻿  main2.cpp
+C:\Users\Admin\GitHub\messaging-program\All-In-One\main2.cpp(288,59): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\Admin\GitHub\messaging-program\All-In-One\main2.cpp(298,52): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\Admin\GitHub\messaging-program\All-In-One\main2.cpp(330,55): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
   All-In-One.vcxproj -> C:\Users\Admin\GitHub\messaging-program\All-In-One\x64\Debug\All-In-One.exe
