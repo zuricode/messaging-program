@@ -8,10 +8,9 @@
 
 using namespace std;
 
-void acceptFunc(SOCKET&);
+void connectToClient(SOCKET&, vector<SOCKET>&);
 void closeClientSockets(vector<SOCKET>&);
-void closeThreads(vector<thread>&);
-void receiveMessages(SOCKET&);
+void receiveMessages(SOCKET);
 
 int max_clients = 4;
 
@@ -47,12 +46,32 @@ int main() {
 		cout << "Listen function on server socket engaged..." << endl;
 	}
 
-	acceptFunc(serverSocket);
+	vector<SOCKET> clients;
+	char rBuffer[128] = "";
+	int byteCount;
 
-	cout << "End of program" << endl;
+	while (true) {
+
+		SOCKET newClient = accept(serverSocket, NULL, NULL);
+
+		if(newClient == INVALID_SOCKET) {
+			cout << "invalid socket" << endl;
+		}
+
+		byteCount = recv(newClient, rBuffer, 128, 0);
+		cout << rBuffer << " has connected!" << endl;
+	 
+		clients.push_back(newClient);
+
+		thread r(connectToClient, ref(newClient), ref(clients));
+		r.detach();
+
+	}	
 
 	closesocket(serverSocket);
 	WSACleanup();
+
+	cout << "End of program. Press ENTER" << endl;
 
 	cin.get();
 
@@ -61,32 +80,36 @@ int main() {
 }
 
 
-void acceptFunc(SOCKET& serverSocket) {
+void connectToClient(SOCKET& client, vector<SOCKET>& clients) {
 
-	int i = 0;
-	vector<thread> clientThreads;
-	vector<SOCKET> clientSockets;
+	int byteCount = 0;
+	char rBuffer[256] = "";
 
 	while (true) {
 
-		SOCKET newClient = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-		newClient = accept(serverSocket, NULL, NULL);
+		byteCount = recv(client, rBuffer, 256, 0);
 
-		clientSockets.push_back(newClient);
-
-		if (clientSockets[i] != INVALID_SOCKET) {
-			cout << "Socket #" << clientSockets[i] << " has connected!" << endl;
+		if (byteCount <= 0) {
+			cout << "Client has disconnected" << endl;
+			break;
+		}
+		else {
+			cout << rBuffer << endl;
 		}
 
-		thread t(receiveMessages, ref(clientSockets[i]));
-		clientThreads.push_back(move(t));
+		memset(rBuffer, 0, 256);
 
-		i++;
+		for (auto i : clients) {
+			if (i != client) {
+				byteCount = send(i, rBuffer, 256, 0);
+
+				if (byteCount <= 0) {
+					cout << "ERROR: \"" << rBuffer << "\" message could not be sent to other clients" << endl
+				}
+			}
+		}
 
 	}
-
-	closeThreads(clientThreads);
-	closeClientSockets(clientSockets);
 
 }
 
@@ -96,21 +119,22 @@ void closeClientSockets(vector<SOCKET>& s) {
 	}
 }
 
-void closeThreads(vector<thread>& t) {
-	for (int i = 0; i < t.size(); i++) {
-		t[i].join();
-	}
-}
-
-void receiveMessages(SOCKET& newSocket) {
+void receiveMessages(SOCKET newSocket) {
 
 	int byteCount = 0;
 	char rBuffer[256] = "";
 
 	while (true) {
 
-		recv(newSocket, rBuffer, 256, 0);
-		cout << rBuffer << endl;
+		byteCount = recv(newSocket, rBuffer, 256, 0);
+
+		if (byteCount <= 0) {
+			cout << "Client has disconnected" << endl;
+			break;
+		}
+		else {
+			cout << rBuffer << endl;
+		}
 
 		memset(rBuffer, 0, 256);
 

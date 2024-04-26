@@ -47,13 +47,13 @@ int main() {
 		return 0;
 	}
 	else {
+		send(clientSocket, username.c_str(), 128, 0);
 		cout << "Connected to a server socket on " << server_ip << ":" << port << endl;
 	}
 
-	thread send(sendMessages, ref(clientSocket), ref(username));
 	thread recv(receiveMessages, ref(clientSocket));
+	sendMessages(clientSocket, username);
 
-	send.join();
 	recv.join();
 
 	closesocket(clientSocket);
@@ -67,6 +67,8 @@ int main() {
 
 void sendMessages(SOCKET& s, const string& USERNAME) {
 
+	int byteCount;
+
 	while (true) {
 
 		string msg(USERNAME);
@@ -76,7 +78,11 @@ void sendMessages(SOCKET& s, const string& USERNAME) {
 		msg.insert(0, ": ");
 		msg.insert(0, USERNAME);
 
-		send(s, msg.c_str(), msg.size() + 1, 0);
+		byteCount = send(s, msg.c_str(), msg.size() + 1, 0);
+
+		if (byteCount <= 0) {
+			cout << "Message was unable to be sent" << endl;
+		}
 
 	}
 
@@ -84,14 +90,21 @@ void sendMessages(SOCKET& s, const string& USERNAME) {
 
 void receiveMessages(SOCKET& s) {
 
+	int byteCount;
 	char rBuffer[256] = "";
 
 	while (true) {
 
 		memset(rBuffer, 0, 256);
 
-		recv(s, rBuffer, 256, 0);
-		cout << rBuffer << endl;
+		byteCount = recv(s, rBuffer, 256, 0);
+
+		if (byteCount <= 0) {
+			cout << "You have disconnected from the server" << endl;
+		}
+		else {
+			cout << rBuffer << endl;
+		}
 
 	}
 
