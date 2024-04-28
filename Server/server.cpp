@@ -10,7 +10,6 @@ using namespace std;
 
 void connectToClient(SOCKET&, vector<SOCKET>&);
 void closeClientSockets(vector<SOCKET>&);
-void receiveMessages(SOCKET);
 
 int max_clients = 4;
 
@@ -84,22 +83,28 @@ void connectToClient(SOCKET& client, vector<SOCKET>& clients) {
 
 	int byteCount = 0;
 	char rBuffer[256] = "";
+	string msg;
 
 	while (true) {
 
+		memset(rBuffer, 0, 256);
+
 		byteCount = recv(client, rBuffer, 256, 0);
+		
+		msg = rBuffer;
 
 		if (byteCount <= 0) {
-			cout << "Client has disconnected" << endl;
+			break;
+		} 
+		else if(msg == "exit" || msg == "EXIT") {
+			send(client, msg.c_str(), msg.size(), 0);
 			break;
 		}
 		else {
-			cout << rBuffer << endl;
+			cout << msg << endl;
 		}
 
-		memset(rBuffer, 0, 256);
-
-		for (auto i : clients) {
+		/*for (auto i : clients) {
 			if (i != client) {
 				byteCount = send(i, rBuffer, 256, 0);
 
@@ -107,9 +112,15 @@ void connectToClient(SOCKET& client, vector<SOCKET>& clients) {
 					cout << "ERROR: \"" << rBuffer << "\" message could not be sent to other clients" << endl
 				}
 			}
-		}
+		}*/
 
 	}
+
+	auto it = find(clients.begin(), clients.end(), client);
+	clients.erase(it);
+
+	closesocket(client);
+	cout << "Socket #" << client << " has left the chat" << endl;
 
 }
 
@@ -117,30 +128,4 @@ void closeClientSockets(vector<SOCKET>& s) {
 	for (auto i : s) {
 		closesocket(i);
 	}
-}
-
-void receiveMessages(SOCKET newSocket) {
-
-	int byteCount = 0;
-	char rBuffer[256] = "";
-
-	while (true) {
-
-		byteCount = recv(newSocket, rBuffer, 256, 0);
-
-		if (byteCount <= 0) {
-			cout << "Client has disconnected" << endl;
-			break;
-		}
-		else {
-			cout << rBuffer << endl;
-		}
-
-		memset(rBuffer, 0, 256);
-
-	}
-
-	cout << "No longer receiving messages on SOCKET#" << newSocket << endl;
-	closesocket(newSocket);
-
 }

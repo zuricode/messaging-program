@@ -10,6 +10,7 @@ using namespace std;
 
 void sendMessages(SOCKET&, const string&);
 void receiveMessages(SOCKET&);
+const char EXIT[] = "EXIT\0";
 
 int main() {
 
@@ -52,13 +53,18 @@ int main() {
 	}
 
 	thread recv(receiveMessages, ref(clientSocket));
-	sendMessages(clientSocket, username);
+	thread send(sendMessages, ref(clientSocket), ref(username));
 
 	recv.join();
+	send.join();
+
+	cout << "You have disconnected from the server" << endl;
+	cout << endl;
 
 	closesocket(clientSocket);
 	WSACleanup();
 
+	cout << "Press the ENTER key to quit the program...";
 	cin.get();
 
 	return 0;
@@ -67,45 +73,55 @@ int main() {
 
 void sendMessages(SOCKET& s, const string& USERNAME) {
 
+	string msg = "";
 	int byteCount;
 
-	while (true) {
-
-		string msg(USERNAME);
+	do {
 
 		getline(cin, msg);
 
-		msg.insert(0, ": ");
-		msg.insert(0, USERNAME);
+		if (msg != "exit" && msg != "EXIT") {
+			msg.insert(0, ": ");
+			msg.insert(0, USERNAME);
+			byteCount = send(s, msg.c_str(), msg.size() + 1, 0);
 
-		byteCount = send(s, msg.c_str(), msg.size() + 1, 0);
+		}
+		else {
+			byteCount = send(s, EXIT, sizeof(EXIT), 0);
+		}
+		
 
 		if (byteCount <= 0) {
 			cout << "Message was unable to be sent" << endl;
 		}
 
-	}
+
+	} while (msg != "exit" && msg != "EXIT");
+
+	cout << endl;
 
 }
 
 void receiveMessages(SOCKET& s) {
 
-	int byteCount;
+	int byteCount = -1;
 	char rBuffer[256] = "";
+	string msg;
 
-	while (true) {
+	do {
 
 		memset(rBuffer, 0, 256);
 
 		byteCount = recv(s, rBuffer, 256, 0);
+		msg = rBuffer;
 
 		if (byteCount <= 0) {
-			cout << "You have disconnected from the server" << endl;
+			break;
 		}
-		else {
-			cout << rBuffer << endl;
+		else if(msg != "EXIT") {
+			cout << msg << endl;
 		}
 
-	}
+	} while (msg != "EXIT");
 
 }
