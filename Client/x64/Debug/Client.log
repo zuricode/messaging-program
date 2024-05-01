@@ -1,4 +1,3 @@
-﻿C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(531,5): warning MSB8028: The intermediate directory (x64\Debug\) contains files shared from another project (Client - Messaging Program.vcxproj).  This can lead to incorrect clean and rebuild behavior.
-  client.cpp
-C:\Users\test\GitHub\messaging-program\Client\client.cpp(87,48): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
-  Client.vcxproj -> C:\Users\test\GitHub\messaging-program\Client\x64\Debug\Client.exe
+﻿  client.cpp
+C:\Users\Admin\GitHub\messaging-program\Client\client.cpp(83,47): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+  Client.vcxproj -> C:\Users\Admin\GitHub\messaging-program\Client\x64\Debug\Client.exe

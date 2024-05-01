@@ -79,17 +79,8 @@ void sendMessages(SOCKET& s, const string& USERNAME) {
 	do {
 
 		getline(cin, msg);
-
-		if (msg != "exit" && msg != "EXIT") {
-			msg.insert(0, ": ");
-			msg.insert(0, USERNAME);
-			byteCount = send(s, msg.c_str(), msg.size() + 1, 0);
-
-		}
-		else {
-			byteCount = send(s, EXIT, sizeof(EXIT), 0);
-		}
 		
+		byteCount = send(s, msg.c_str(), msg.size() + 1, 0);		
 
 		if (byteCount <= 0) {
 			cout << "Message was unable to be sent" << endl;

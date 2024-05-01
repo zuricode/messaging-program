@@ -1,2 +1,1 @@
-C:\Users\Admin\GitHub\Test\Server\x64\Debug\Server.exe
-C:\Users\test\GitHub\messaging-program\Server\x64\Debug\Server.exe
+C:\Users\Admin\GitHub\messaging-program\Server\x64\Debug\Server.exe

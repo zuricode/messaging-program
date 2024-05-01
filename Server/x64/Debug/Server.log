@@ -1,4 +1,9 @@
-﻿C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(531,5): warning MSB8028: The intermediate directory (x64\Debug\) contains files shared from another project (Revised Messaging Program.vcxproj, Server - Messaging Program.vcxproj).  This can lead to incorrect clean and rebuild behavior.
-  server.cpp
-C:\Users\test\GitHub\messaging-program\Server\server.cpp(100,38): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
-  Server.vcxproj -> C:\Users\test\GitHub\messaging-program\Server\x64\Debug\Server.exe
+﻿  server.cpp
+C:\Users\Admin\GitHub\messaging-program\Server\server.cpp(97,38): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\Admin\GitHub\messaging-program\Server\server.cpp(158,26): warning C4244: 'argument': conversion from 'SOCKET' to '_Ty', possible loss of data
+C:\Users\Admin\GitHub\messaging-program\Server\server.cpp(158,26): warning C4244:         with
+C:\Users\Admin\GitHub\messaging-program\Server\server.cpp(158,26): warning C4244:         [
+C:\Users\Admin\GitHub\messaging-program\Server\server.cpp(158,26): warning C4244:             _Ty=int
+C:\Users\Admin\GitHub\messaging-program\Server\server.cpp(158,26): warning C4244:         ]
+C:\Users\Admin\GitHub\messaging-program\Server\server.cpp(214,56): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+  Server.vcxproj -> C:\Users\Admin\GitHub\messaging-program\Server\x64\Debug\Server.exe

@@ -9,8 +9,11 @@
 using namespace std;
 
 void connectToClient(SOCKET&, vector<SOCKET>&);
-void closeClientSockets(vector<SOCKET>&);
+void showActiveSockets(const vector<SOCKET>&);
+void acceptNewClient(const SOCKET&, vector<int>&);
+void broadcastMessage(const string&, const SOCKET&, const vector<int>&);
 
+static vector<int> clientSockets;
 int max_clients = 4;
 
 int main() {
@@ -23,7 +26,7 @@ int main() {
 		cout << "Error initializing Winsock2.dll" << endl;
 	}
 
-	SOCKET serverSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	SOCKET serverSocket = socket(AF_INET, SOCK_STREAM, 0);
 
 	if (serverSocket == INVALID_SOCKET) {
 		cout << "Error creating server socket" << endl;
@@ -45,27 +48,21 @@ int main() {
 		cout << "Listen function on server socket engaged..." << endl;
 	}
 
-	vector<SOCKET> clients;
-	char rBuffer[128] = "";
-	int byteCount;
+	int i = 0;
+	vector<thread> threads;
 
-	while (true) {
+	while (i < max_clients) {
 
-		SOCKET newClient = accept(serverSocket, NULL, NULL);
+		thread t(acceptNewClient, ref(serverSocket), ref(clientSockets));
+		threads.push_back(move(t));
 
-		if(newClient == INVALID_SOCKET) {
-			cout << "invalid socket" << endl;
-		}
-
-		byteCount = recv(newClient, rBuffer, 128, 0);
-		cout << rBuffer << " has connected!" << endl;
-	 
-		clients.push_back(newClient);
-
-		thread r(connectToClient, ref(newClient), ref(clients));
-		r.detach();
+		i++;
 
 	}	
+
+	for (int i = 0; i < max_clients; i++) {
+		threads[i].join();
+	}
 
 	closesocket(serverSocket);
 	WSACleanup();
@@ -104,28 +101,123 @@ void connectToClient(SOCKET& client, vector<SOCKET>& clients) {
 			cout << msg << endl;
 		}
 
-		/*for (auto i : clients) {
+		for (auto i : clients) {
 			if (i != client) {
 				byteCount = send(i, rBuffer, 256, 0);
 
 				if (byteCount <= 0) {
-					cout << "ERROR: \"" << rBuffer << "\" message could not be sent to other clients" << endl
+					cout << "ERROR: \"" << rBuffer << "\" message could not be sent to other clients" << endl;
 				}
 			}
-		}*/
+		}
 
 	}
 
 	auto it = find(clients.begin(), clients.end(), client);
 	clients.erase(it);
+	cout << "Socket #" << *it << " was deleted" << endl;
+
 
 	closesocket(client);
 	cout << "Socket #" << client << " has left the chat" << endl;
 
+	showActiveSockets(clients);
+
 }
 
-void closeClientSockets(vector<SOCKET>& s) {
-	for (auto i : s) {
-		closesocket(i);
+void showActiveSockets(const vector<SOCKET>& SOCKETS) {
+
+	cout << "Active Sockets: ";
+
+	if (SOCKETS.size()) {
+		for (auto i : SOCKETS) {
+			cout << i << " ";
+		}
 	}
+	else {
+		cout << "EMPTY" << endl;
+	}
+
+	cout << endl;	
+
 }
+
+void acceptNewClient(const SOCKET& SERVERSOCKET, vector<int>& clientSockets) {
+
+	int byteCount = 0;
+	char rBuffer[256] = "";
+	string msg = "";
+	string username = "";
+
+	SOCKET client = accept(SERVERSOCKET, NULL, NULL);
+
+	if (client == INVALID_SOCKET) {
+		cout << "invalid socket" << endl;
+	}
+
+	clientSockets.push_back(client);
+
+	recv(client, rBuffer, 128, 0);
+	username = rBuffer;
+	
+	msg = username + " has connected!";
+
+	broadcastMessage(msg, client, clientSockets);
+
+	cout << msg << endl;
+
+	do {
+
+		memset(rBuffer, 0, 256);
+
+		byteCount = recv(client, rBuffer, 256, 0);
+
+		msg = rBuffer;
+
+		if (byteCount <= 0) {
+			break;
+		}  
+
+		if (msg == "exit" || msg == "EXIT") {
+
+			auto it = find(clientSockets.begin(), clientSockets.end(), client);
+			clientSockets.erase(it);
+
+			break;
+
+		}		
+
+		msg = username + ": " + rBuffer;
+
+		broadcastMessage(msg, client, clientSockets);
+
+		cout << msg << endl;
+
+	} while (msg != "exit" || msg != "EXIT");
+
+	closesocket(client);
+
+	msg = username + " has left the chat";
+
+	broadcastMessage(msg, client, clientSockets);
+
+	cout << msg << endl;
+
+}
+
+void broadcastMessage(const string& MESSAGE, const SOCKET& SENDER, const vector<int>& CLIENTS) {
+
+	int byteCount;
+
+	for (auto i : CLIENTS) {
+		if (i != SENDER) {
+			byteCount = send(i, MESSAGE.c_str(), MESSAGE.size() + 1, 0);
+
+			if (byteCount <= 0) {
+				cout << "ERROR: \"" << MESSAGE << "\" message could not be sent to other clients" << endl;
+			}
+		}
+	}
+
+}
+

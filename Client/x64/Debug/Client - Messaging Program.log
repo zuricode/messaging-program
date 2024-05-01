@@ -1,3 +1,0 @@
-﻿  client.cpp
-C:\Users\Admin\GitHub\messaging-program\Client\client.cpp(146,59): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
-  Client - Messaging Program.vcxproj -> C:\Users\Admin\GitHub\messaging-program\Client\x64\Debug\Client - Messaging Program.exe
