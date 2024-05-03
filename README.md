@@ -20,5 +20,3 @@ To-Do List:
 - Condense the timestamp on every message to be prettier
 
 - Enjoy!
-
-=======
