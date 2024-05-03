@@ -15,6 +15,7 @@ When attempting to do so, each newly connected client would disconnected previou
 activated a set amount of client threads (4) which stop anyone from being disconnected. This is a work in progress and will fix this soon.
 
 To-Do List:
+- URGENT BUG: Notify connecting client when the server cannot currently accept any more new clients. At present, client thinks they are connected.
 - Enable an unlimited amount of clients that exist on their own unique thread.
 - Enabling unique font colours to easy differentiate between the server and each client
 - Condense the timestamp on every message to be prettier
