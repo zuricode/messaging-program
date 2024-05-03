@@ -107,13 +107,12 @@ void sendMessages(SOCKET& s, const string& USERNAME) {
 
 	string msg = "";
 	int byteCount;
-	int msg_size = static_cast<int>(msg.size() + 1);
 
 	do {
 
 		getline(cin, msg);
 		
-		byteCount = send(s, msg.c_str(), msg_size, 0);		
+		byteCount = send(s, msg.c_str(), msg.size() + 1, 0);
 
 		if (byteCount <= 0) {
 			cout << "Message was unable to be sent" << endl;
