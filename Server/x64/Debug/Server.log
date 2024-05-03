@@ -1,9 +1,2 @@
 ﻿  server.cpp
-C:\Users\Admin\GitHub\messaging-program\Server\server.cpp(97,38): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
-C:\Users\Admin\GitHub\messaging-program\Server\server.cpp(158,26): warning C4244: 'argument': conversion from 'SOCKET' to '_Ty', possible loss of data
-C:\Users\Admin\GitHub\messaging-program\Server\server.cpp(158,26): warning C4244:         with
-C:\Users\Admin\GitHub\messaging-program\Server\server.cpp(158,26): warning C4244:         [
-C:\Users\Admin\GitHub\messaging-program\Server\server.cpp(158,26): warning C4244:             _Ty=int
-C:\Users\Admin\GitHub\messaging-program\Server\server.cpp(158,26): warning C4244:         ]
-C:\Users\Admin\GitHub\messaging-program\Server\server.cpp(214,56): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
   Server.vcxproj -> C:\Users\Admin\GitHub\messaging-program\Server\x64\Debug\Server.exe

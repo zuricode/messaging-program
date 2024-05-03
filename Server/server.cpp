@@ -3,15 +3,18 @@
 #include<ws2tcpip.h>
 #include<vector>
 #include<thread>
+#include<chrono>
+#include<format>
 
 #pragma comment (lib, "ws2_32.lib")
 
 using namespace std;
 
-void connectToClient(SOCKET&, vector<SOCKET>&);
+void showAppHeader();
 void showActiveSockets(const vector<SOCKET>&);
 void acceptNewClient(const SOCKET&, vector<int>&);
 void broadcastMessage(const string&, const SOCKET&, const vector<int>&);
+string CurrentDate();
 
 static vector<int> clientSockets;
 int max_clients = 4;
@@ -21,6 +24,8 @@ int main() {
 	WSAData wsaData;	
 	string ip_address = "127.0.0.1";
 	int port = 56789;
+
+	showAppHeader();
 
 	if (WSAStartup(MAKEWORD(2, 2), &wsaData)) {
 		cout << "Error initializing Winsock2.dll" << endl;
@@ -45,19 +50,24 @@ int main() {
 		cout << "Error engaging listen mode on server socket" << endl;
 	}
 	else {
-		cout << "Listen function on server socket engaged..." << endl;
+		cout << "Open a Client CLI to connect to the server..." << endl;
+		cout << endl;
 	}
 
-	int i = 0;
-	vector<thread> threads;
+	cout << "---------------------------------------------------------\n\n";
 
-	while (i < max_clients) {
+	cout << "Currently waiting for a client...\n\n";
+
+	vector<thread> threads;
+	int number_of_clients = 0;
+
+	while (number_of_clients < max_clients) {
 
 		thread t(acceptNewClient, ref(serverSocket), ref(clientSockets));
 		threads.push_back(move(t));
 
-		i++;
-
+		number_of_clients++;
+		
 	}	
 
 	for (int i = 0; i < max_clients; i++) {
@@ -75,53 +85,21 @@ int main() {
 
 }
 
+void showAppHeader() {
 
-void connectToClient(SOCKET& client, vector<SOCKET>& clients) {
+	cout << endl;
+	cout << "*******************************************************" << endl;
+	cout << "*                                                     *" << endl;
+	cout << "*        S I M P L E   C H A T   P R O G R A M        *" << endl;
+	cout << "*                   -------------                     *" << endl;
+	cout << "*                    S E R V E R                      *" << endl;
+	cout << "*                                                     *" << endl;
+	cout << "*******************************************************\n\n";
 
-	int byteCount = 0;
-	char rBuffer[256] = "";
-	string msg;
-
-	while (true) {
-
-		memset(rBuffer, 0, 256);
-
-		byteCount = recv(client, rBuffer, 256, 0);
-		
-		msg = rBuffer;
-
-		if (byteCount <= 0) {
-			break;
-		} 
-		else if(msg == "exit" || msg == "EXIT") {
-			send(client, msg.c_str(), msg.size(), 0);
-			break;
-		}
-		else {
-			cout << msg << endl;
-		}
-
-		for (auto i : clients) {
-			if (i != client) {
-				byteCount = send(i, rBuffer, 256, 0);
-
-				if (byteCount <= 0) {
-					cout << "ERROR: \"" << rBuffer << "\" message could not be sent to other clients" << endl;
-				}
-			}
-		}
-
-	}
-
-	auto it = find(clients.begin(), clients.end(), client);
-	clients.erase(it);
-	cout << "Socket #" << *it << " was deleted" << endl;
-
-
-	closesocket(client);
-	cout << "Socket #" << client << " has left the chat" << endl;
-
-	showActiveSockets(clients);
+	cout << "This is a very simple Server CLI to enable clients to " << endl;
+	cout << "communicate over a TCP port and the loopback adddress of 127.0.0.1.\n\n";
+	cout << "Open the Client CLI to connect to the Server and start messaging!" << endl;
+	cout << "(To close the server, just exit the window)\n\n";
 
 }
 
@@ -155,12 +133,12 @@ void acceptNewClient(const SOCKET& SERVERSOCKET, vector<int>& clientSockets) {
 		cout << "invalid socket" << endl;
 	}
 
-	clientSockets.push_back(client);
+	clientSockets.push_back(static_cast<int>(client));
 
 	recv(client, rBuffer, 128, 0);
 	username = rBuffer;
 	
-	msg = username + " has connected!";
+	msg = CurrentDate() + username + " has connected!";
 
 	broadcastMessage(msg, client, clientSockets);
 
@@ -187,7 +165,7 @@ void acceptNewClient(const SOCKET& SERVERSOCKET, vector<int>& clientSockets) {
 
 		}		
 
-		msg = username + ": " + rBuffer;
+		msg = CurrentDate() + username + ": " + rBuffer;
 
 		broadcastMessage(msg, client, clientSockets);
 
@@ -197,7 +175,7 @@ void acceptNewClient(const SOCKET& SERVERSOCKET, vector<int>& clientSockets) {
 
 	closesocket(client);
 
-	msg = username + " has left the chat";
+	msg = CurrentDate() + username + " has left the chat";
 
 	broadcastMessage(msg, client, clientSockets);
 
@@ -208,10 +186,11 @@ void acceptNewClient(const SOCKET& SERVERSOCKET, vector<int>& clientSockets) {
 void broadcastMessage(const string& MESSAGE, const SOCKET& SENDER, const vector<int>& CLIENTS) {
 
 	int byteCount;
+	int msg_size = static_cast<int>(MESSAGE.size() + 1);
 
 	for (auto i : CLIENTS) {
 		if (i != SENDER) {
-			byteCount = send(i, MESSAGE.c_str(), MESSAGE.size() + 1, 0);
+			byteCount = send(i, MESSAGE.c_str(), msg_size, 0);
 
 			if (byteCount <= 0) {
 				cout << "ERROR: \"" << MESSAGE << "\" message could not be sent to other clients" << endl;
@@ -221,3 +200,10 @@ void broadcastMessage(const string& MESSAGE, const SOCKET& SENDER, const vector<
 
 }
 
+string CurrentDate() {
+	
+	string t = format("[{:%F %T}] - ", std::chrono::system_clock::now());
+
+	return t;
+
+}
