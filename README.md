@@ -1,7 +1,7 @@
 Simple Chat Program
 -------------------
 
-This is a very simple client-server program that allows messages to sent between multiple clients and a server.
+This is a very simple CLI client-server program that allows messages to sent between multiple clients and a server.
 NOTE: This app only caters for 4 client connections before the server shuts down!
 
 Functionality:
