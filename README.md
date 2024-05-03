@@ -19,4 +19,4 @@ To-Do List:
 - Enabling unique font colours to easy differentiate between the server and each client
 - Condense the timestamp on every message to be prettier
 
-- Enjoy!
+Enjoy!
