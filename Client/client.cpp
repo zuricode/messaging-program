@@ -10,8 +10,8 @@
 using namespace std;
 
 void showAppHeader();
-void sendMessages(SOCKET&, const string&);
-void receiveMessages(SOCKET&);
+void sendMessages(int, const string);
+void receiveMessages(int);
 const char EXIT[] = "EXIT\0";
 
 int main() {
@@ -51,19 +51,25 @@ int main() {
 			break;
 		}
 	}
-	
-	cout << "You are now connected to the server!" << endl;
-	cout << endl;
 
 	string username;
 	cout << "Username: ";
 	getline(cin, username);
 	send(clientSocket, username.c_str(), 128, 0);
 
-	cout << "-------------------------------------------------------------------------" << endl;
+	char rBuffer[256] = "";
 
-	thread recv(receiveMessages, ref(clientSocket));
-	thread send(sendMessages, ref(clientSocket), ref(username));
+	int byteCount = recv(clientSocket, rBuffer, 256, 0);
+
+	if (byteCount > 0) {
+		cout << rBuffer << endl;
+		cout << endl;
+	}	
+
+	cout << "-------------------------------------------------------------------------\n\n";
+
+	thread recv(receiveMessages, clientSocket);
+	thread send(sendMessages, clientSocket, username);
 
 	recv.join();
 	send.join();
@@ -103,7 +109,7 @@ void showAppHeader() {
 
 }
 
-void sendMessages(SOCKET& s, const string& USERNAME) {
+void sendMessages(int s, const string USERNAME) {
 
 	string msg = "";
 	int byteCount;
@@ -112,9 +118,11 @@ void sendMessages(SOCKET& s, const string& USERNAME) {
 
 		getline(cin, msg);
 		
-		byteCount = send(s, msg.c_str(), msg.size() + 1, 0);
+		int size = static_cast<int>(msg.size());
 
-		if (byteCount <= 0) {
+		byteCount = send(s, msg.c_str(), size, 0);
+
+		if (byteCount < 0) {
 			cout << "Message was unable to be sent" << endl;
 		}
 
@@ -125,7 +133,7 @@ void sendMessages(SOCKET& s, const string& USERNAME) {
 
 }
 
-void receiveMessages(SOCKET& s) {
+void receiveMessages(int s) {
 
 	int byteCount = -1;
 	char rBuffer[256] = "";

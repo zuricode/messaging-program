@@ -11,13 +11,13 @@
 using namespace std;
 
 void showAppHeader();
-void showActiveSockets(const vector<SOCKET>&);
-void acceptNewClient(const SOCKET&, vector<int>&);
-void broadcastMessage(const string&, const SOCKET&, const vector<int>&);
-string CurrentDate();
+void showActiveSockets(const vector<int>&);
+void receiveMessage(const int&, const string&, vector<int>&);
+void broadcastMessage(const string&, const int&, const vector<int>&);
+void removeSocket(const int&, vector<int>&);
+string getCurrentDate();
 
 static vector<int> clientSockets;
-int max_clients = 4;
 
 int main() {
 
@@ -46,7 +46,7 @@ int main() {
 		cout << "Error binding server socket to " << ip_address << ":" << port << endl;
 	}
 
-	if (listen(serverSocket, max_clients)) {
+	if (listen(serverSocket, SOMAXCONN)) {
 		cout << "Error engaging listen mode on server socket" << endl;
 	}
 	else {
@@ -59,18 +59,45 @@ int main() {
 	cout << "Currently waiting for a client...\n\n";
 
 	vector<thread> threads;
-	int number_of_clients = 0;
 
-	while (number_of_clients < max_clients) {
+	while (true) {
 
-		thread t(acceptNewClient, ref(serverSocket), ref(clientSockets));
-		threads.push_back(move(t));
+		int newClient = static_cast<int>(accept(serverSocket, NULL, NULL));
 
-		number_of_clients++;
+		if (newClient == INVALID_SOCKET) {
+			cout << "Error: Invalid socket" << endl;
+		}
+
+		clientSockets.push_back(newClient);
+
+		char rBuffer[256] = "";
+
+		int byteCount = recv(newClient, rBuffer, 256, 0);
+
+		if (byteCount > 0) {
+
+			string successfulConnection = "You are now connected to the server!";
+			int size = static_cast<int>(successfulConnection.size());
+
+			send(newClient, successfulConnection.c_str(), size, 0);
+			
+			string username = rBuffer;
+
+			string msg = getCurrentDate() + username + " has connected!";
+
+			broadcastMessage(msg, newClient, clientSockets);
+
+			cout << msg << endl;
+
+			thread t(receiveMessage, newClient, username, ref(clientSockets));
+			threads.push_back(move(t));
+
+		}
 		
+
 	}	
 
-	for (int i = 0; i < max_clients; i++) {
+	for (int i = 0; i < threads.size(); i++) {
 		threads[i].join();
 	}
 
@@ -103,7 +130,7 @@ void showAppHeader() {
 
 }
 
-void showActiveSockets(const vector<SOCKET>& SOCKETS) {
+void showActiveSockets(const vector<int>& SOCKETS) {
 
 	cout << "Active Sockets: ";
 
@@ -120,70 +147,48 @@ void showActiveSockets(const vector<SOCKET>& SOCKETS) {
 
 }
 
-void acceptNewClient(const SOCKET& SERVERSOCKET, vector<int>& clientSockets) {
+void receiveMessage(const int& CLIENT, const string& USERNAME, vector<int>& clientSockets) {
 
 	int byteCount = 0;
-	char rBuffer[256] = "";
 	string msg = "";
-	string username = "";
-
-	SOCKET client = accept(SERVERSOCKET, NULL, NULL);
-
-	if (client == INVALID_SOCKET) {
-		cout << "invalid socket" << endl;
-	}
-
-	clientSockets.push_back(static_cast<int>(client));
-
-	recv(client, rBuffer, 128, 0);
-	username = rBuffer;
-	
-	msg = CurrentDate() + username + " has connected!";
-
-	broadcastMessage(msg, client, clientSockets);
-
-	cout << msg << endl;
 
 	do {
 
-		memset(rBuffer, 0, 256);
+		char rBuffer[256] = "";
 
-		byteCount = recv(client, rBuffer, 256, 0);
+		byteCount = recv(CLIENT, rBuffer, 256, 0);
 
 		msg = rBuffer;
 
 		if (byteCount <= 0) {
+			cout << "Error: Message could not be received" << endl;
 			break;
 		}  
 
 		if (msg == "exit" || msg == "EXIT") {
-
-			auto it = find(clientSockets.begin(), clientSockets.end(), client);
-			clientSockets.erase(it);
-
+			removeSocket(CLIENT, clientSockets);
 			break;
-
 		}		
 
-		msg = CurrentDate() + username + ": " + rBuffer;
+		msg = getCurrentDate() + USERNAME + ": " + rBuffer;
 
-		broadcastMessage(msg, client, clientSockets);
+		broadcastMessage(msg, CLIENT, clientSockets);
 
 		cout << msg << endl;
 
 	} while (msg != "exit" || msg != "EXIT");
 
-	closesocket(client);
+	closesocket(CLIENT);
 
-	msg = CurrentDate() + username + " has left the chat";
+	msg = getCurrentDate() + USERNAME + " has left the chat";
 
-	broadcastMessage(msg, client, clientSockets);
+	broadcastMessage(msg, CLIENT, clientSockets);
 
 	cout << msg << endl;
 
 }
 
-void broadcastMessage(const string& MESSAGE, const SOCKET& SENDER, const vector<int>& CLIENTS) {
+void broadcastMessage(const string& MESSAGE, const int& SENDER, const vector<int>& CLIENTS) {
 
 	int byteCount;
 	int msg_size = static_cast<int>(MESSAGE.size() + 1);
@@ -200,7 +205,15 @@ void broadcastMessage(const string& MESSAGE, const SOCKET& SENDER, const vector<
 
 }
 
-string CurrentDate() {
+void removeSocket(const int& SOCKET_TO_DELETE, vector<int>& sockets) {
+
+	auto it = find(sockets.begin(), sockets.end(), SOCKET_TO_DELETE);
+	sockets.erase(it);
+
+}
+
+
+string getCurrentDate() {
 	
 	string t = format("[{:%F %T}] - ", std::chrono::system_clock::now());
 
