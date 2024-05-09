@@ -23,31 +23,45 @@ int main() {
 
 	WSAData wsaData;	
 	string ip_address = "127.0.0.1";
-	int port = 56789;
+	int port = 60000;
 
 	showAppHeader();
 
 	if (WSAStartup(MAKEWORD(2, 2), &wsaData)) {
 		cout << "Error initializing Winsock2.dll" << endl;
+		cout << "Error code: " << WSAGetLastError() << endl;
+		WSACleanup();
+		return -1;
 	}
 
 	SOCKET serverSocket = socket(AF_INET, SOCK_STREAM, 0);
 
 	if (serverSocket == INVALID_SOCKET) {
 		cout << "Error creating server socket" << endl;
+		cout << "Error code: " << WSAGetLastError() << endl;
+		closesocket(serverSocket);
+		WSACleanup();
+		return -1;
 	}
 
-	sockaddr_in bind_info;
-	bind_info.sin_family = AF_INET;
-	bind_info.sin_port = htons(port);
-	inet_pton(AF_INET, ip_address.c_str(), &bind_info.sin_addr.s_addr);
+	sockaddr_in addr;
+	addr.sin_family = AF_INET;
+	addr.sin_port = htons(port);
+	inet_pton(AF_INET, ip_address.c_str(), &addr.sin_addr.s_addr);
 	
-	if (bind(serverSocket, (SOCKADDR*)&bind_info, sizeof(bind_info))) {
+	if (bind(serverSocket, (SOCKADDR*)&addr, sizeof(addr))) {
 		cout << "Error binding server socket to " << ip_address << ":" << port << endl;
+		cout << "Error code: " << WSAGetLastError() << endl;
+		closesocket(serverSocket);
+		WSACleanup();
+		return -1;
 	}
 
 	if (listen(serverSocket, SOMAXCONN)) {
 		cout << "Error engaging listen mode on server socket" << endl;
+		closesocket(serverSocket);
+		WSACleanup();
+		return -1;
 	}
 	else {
 		cout << "Open a Client CLI to connect to the server..." << endl;
@@ -161,12 +175,10 @@ void receiveMessage(const int& CLIENT, const string& USERNAME, vector<int>& clie
 		msg = rBuffer;
 
 		if (byteCount <= 0) {
-			cout << "Error: Message could not be received" << endl;
 			break;
 		}  
 
 		if (msg == "exit" || msg == "EXIT") {
-			removeSocket(CLIENT, clientSockets);
 			break;
 		}		
 
@@ -177,6 +189,8 @@ void receiveMessage(const int& CLIENT, const string& USERNAME, vector<int>& clie
 		cout << msg << endl;
 
 	} while (msg != "exit" || msg != "EXIT");
+
+	removeSocket(CLIENT, clientSockets);
 
 	closesocket(CLIENT);
 

@@ -18,7 +18,7 @@ int main() {
 
 	WSAData wsaData;
 	string server_ip = "127.0.0.1";
-	int port = 56789;
+	int port = 60000;
 
 	showAppHeader();
 
@@ -38,23 +38,49 @@ int main() {
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(port);
 	inet_pton(AF_INET, server_ip.c_str(), &addr.sin_addr.s_addr);
-	
-	while (true) {
-
-		if (connect(clientSocket, (SOCKADDR*)&addr, sizeof(addr))) {
-			cout << "ERROR: No server socket was found at " << server_ip << ":" << port << endl;
-			cout << "IMPORTANT: Remember to open the Server CLI to establish a connection!" << endl;
-			cout << "Attempting to connect with the server...\n\n";
-			this_thread::sleep_for(2s);
-		}
-		else {
-			break;
-		}
-	}
 
 	string username;
 	cout << "Username: ";
 	getline(cin, username);
+
+	cout << endl;
+	
+	while (true) {
+
+		if (connect(clientSocket, (SOCKADDR*)&addr, sizeof(addr))) {
+			/*cout << "ERROR: No server socket was found at " << server_ip << ":" << port << endl;
+			cout << "IMPORTANT: Remember to open the Server CLI to establish a connection!" << endl;
+			cout << "Attempting to connect with the server...\n\n";
+			this_thread::sleep_for(2s);*/
+
+			string dots = "";
+
+			for (int i = 0; i < 10; i++) {
+
+				if (i == 0) {
+					dots = "";
+				}
+				else {
+					dots += ".";
+				}
+
+				cout << "\rSearching for server..." + dots;
+				this_thread::sleep_for(0.25s);
+
+				cout << "\r                                                ";
+				cout << "\rSearching for server...";
+
+
+			}
+
+		}
+		else {
+			cout << endl;
+			break;
+		}
+	}
+
+	
 	send(clientSocket, username.c_str(), 128, 0);
 
 	char rBuffer[256] = "";
