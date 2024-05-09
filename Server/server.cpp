@@ -5,6 +5,7 @@
 #include<thread>
 #include<chrono>
 #include<format>
+//#include<client.h>
 
 #pragma comment (lib, "ws2_32.lib")
 
@@ -16,6 +17,7 @@ void receiveMessage(const int&, const string&, vector<int>&);
 void broadcastMessage(const string&, const int&, const vector<int>&);
 void removeSocket(const int&, vector<int>&);
 string getCurrentDate();
+//string allocateFontColour(vector<Client>&);
 
 static vector<int> clientSockets;
 
@@ -234,3 +236,28 @@ string getCurrentDate() {
 	return t;
 
 }
+
+//int allocateFontColour(vector<Client>& clients) {
+//
+//	int colors[6]{ 31,32,33,34,35,36 };
+//
+//	string color = "\u001b[";
+//
+//	for (int i = 0; i < 6; i++) {
+//
+//		for (int j = 0; j < clients.size(); j++) {
+//
+//			if (clients[j].getFontColour == colors[i]) {
+//				break;
+//			}
+//
+//
+//
+//		}
+//
+//	}
+//
+//
+//
+//
+//}
