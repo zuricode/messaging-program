@@ -4,17 +4,20 @@
 #include<string>
 #include<thread>
 #include<chrono>
+#include "../ansi_term.h"
 
 #pragma comment (lib, "ws2_32.lib")
 
 using namespace std;
 
 void showAppHeader();
-void sendMessages(int, const string);
+void sendMessages(int);
 void receiveMessages(int);
 const char EXIT[] = "EXIT\0";
 
 int main() {
+
+	setupConsole();
 
 	WSAData wsaData;
 	string server_ip = "127.0.0.1";
@@ -48,10 +51,6 @@ int main() {
 	while (true) {
 
 		if (connect(clientSocket, (SOCKADDR*)&addr, sizeof(addr))) {
-			/*cout << "ERROR: No server socket was found at " << server_ip << ":" << port << endl;
-			cout << "IMPORTANT: Remember to open the Server CLI to establish a connection!" << endl;
-			cout << "Attempting to connect with the server...\n\n";
-			this_thread::sleep_for(2s);*/
 
 			string dots = "";
 
@@ -95,7 +94,7 @@ int main() {
 	cout << "-------------------------------------------------------------------------\n\n";
 
 	thread recv(receiveMessages, clientSocket);
-	thread send(sendMessages, clientSocket, username);
+	thread send(sendMessages, clientSocket);
 
 	recv.join();
 	send.join();
@@ -104,6 +103,8 @@ int main() {
 
 	closesocket(clientSocket);
 	WSACleanup();
+
+	restoreConsole();
 
 	cout << "Press the ENTER key to quit the program...";
 	cin.get();
@@ -135,7 +136,7 @@ void showAppHeader() {
 
 }
 
-void sendMessages(int s, const string USERNAME) {
+void sendMessages(int s) {
 
 	string msg = "";
 	int byteCount;

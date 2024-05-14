@@ -5,7 +5,8 @@
 #include<thread>
 #include<chrono>
 #include<format>
-//#include<client.h>
+#include "client.h"
+#include "../ansi_term.h"
 
 #pragma comment (lib, "ws2_32.lib")
 
@@ -13,15 +14,18 @@ using namespace std;
 
 void showAppHeader();
 void showActiveSockets(const vector<int>&);
-void receiveMessage(const int&, const string&, vector<int>&);
-void broadcastMessage(const string&, const int&, const vector<int>&);
-void removeSocket(const int&, vector<int>&);
+void receiveMessage(Client,  vector<Client>&);
+void broadcastMessage(string&, const Client&, const vector<Client>&);
+void removeSocket(const Client&, vector<Client>&);
 string getCurrentDate();
-//string allocateFontColour(vector<Client>&);
+void allocateFontColour(Client&, const int&);
 
-static vector<int> clientSockets;
+static vector<Client> clients;
+
 
 int main() {
+
+	setupConsole();
 
 	WSAData wsaData;	
 	string ip_address = "127.0.0.1";
@@ -84,8 +88,6 @@ int main() {
 			cout << "Error: Invalid socket" << endl;
 		}
 
-		clientSockets.push_back(newClient);
-
 		char rBuffer[256] = "";
 
 		int byteCount = recv(newClient, rBuffer, 256, 0);
@@ -93,23 +95,29 @@ int main() {
 		if (byteCount > 0) {
 
 			string successfulConnection = "You are now connected to the server!";
-			int size = static_cast<int>(successfulConnection.size());
+			string msg(successfulConnection);
 
-			send(newClient, successfulConnection.c_str(), size, 0);
-			
 			string username = rBuffer;
 
-			string msg = getCurrentDate() + username + " has connected!";
+			Client client(newClient, username);
+			allocateFontColour(client, static_cast<int>(clients.size()));
+			clients.push_back(client);
 
-			broadcastMessage(msg, newClient, clientSockets);
+			int size = static_cast<int>(successfulConnection.size());
 
-			cout << msg << endl;
+			send(newClient, msg.c_str(), size, 0);
 
-			thread t(receiveMessage, newClient, username, ref(clientSockets));
+			msg = getCurrentDate() + username + " has connected!";
+			
+			msg = client.addColourToMessage(msg);
+			broadcastMessage(msg, client, clients);
+
+			cout << msg << endl;			
+
+			thread t(receiveMessage, client, ref(clients));
 			threads.push_back(move(t));
 
 		}
-		
 
 	}	
 
@@ -119,6 +127,8 @@ int main() {
 
 	closesocket(serverSocket);
 	WSACleanup();
+
+	restoreConsole();
 
 	cout << "End of program. Press ENTER" << endl;
 
@@ -163,7 +173,7 @@ void showActiveSockets(const vector<int>& SOCKETS) {
 
 }
 
-void receiveMessage(const int& CLIENT, const string& USERNAME, vector<int>& clientSockets) {
+void receiveMessage(Client client, vector<Client>& clientSockets) {
 
 	int byteCount = 0;
 	string msg = "";
@@ -172,59 +182,65 @@ void receiveMessage(const int& CLIENT, const string& USERNAME, vector<int>& clie
 
 		char rBuffer[256] = "";
 
-		byteCount = recv(CLIENT, rBuffer, 256, 0);
+		byteCount = recv(client.getSocketFD(), rBuffer, 256, 0);
 
 		msg = rBuffer;
 
 		if (byteCount <= 0) {
 			break;
-		}  
+		}
 
 		if (msg == "exit" || msg == "EXIT") {
 			break;
-		}		
+		}
 
-		msg = getCurrentDate() + USERNAME + ": " + rBuffer;
+		msg = getCurrentDate() + client.getUsername() + ": " + rBuffer;
+		msg = client.addColourToMessage(msg);
 
-		broadcastMessage(msg, CLIENT, clientSockets);
+		broadcastMessage(msg, client, clientSockets);
 
 		cout << msg << endl;
 
 	} while (msg != "exit" || msg != "EXIT");
 
-	removeSocket(CLIENT, clientSockets);
+	removeSocket(client, clientSockets);
+	closesocket(client.getSocketFD());
 
-	closesocket(CLIENT);
-
-	msg = getCurrentDate() + USERNAME + " has left the chat";
-
-	broadcastMessage(msg, CLIENT, clientSockets);
+	msg = getCurrentDate() + client.getUsername() + " has left the chat";
+	msg = client.addColourToMessage(msg);
+	broadcastMessage(msg, client, clientSockets);
 
 	cout << msg << endl;
 
 }
 
-void broadcastMessage(const string& MESSAGE, const int& SENDER, const vector<int>& CLIENTS) {
+void broadcastMessage(string& msg, const Client& SENDER, const vector<Client>& CLIENTS) {
 
 	int byteCount;
-	int msg_size = static_cast<int>(MESSAGE.size() + 1);
+	int msg_size; 
 
 	for (auto i : CLIENTS) {
+
 		if (i != SENDER) {
-			byteCount = send(i, MESSAGE.c_str(), msg_size, 0);
+
+			msg_size = static_cast<int>(msg.size() + 1);
+			
+			byteCount = send(i.getSocketFD(), msg.c_str(), msg_size, 0);
 
 			if (byteCount <= 0) {
-				cout << "ERROR: \"" << MESSAGE << "\" message could not be sent to other clients" << endl;
+				cout << "ERROR: \"" << msg << "\" message could not be sent to other clients" << endl;
 			}
+
 		}
+
 	}
 
 }
 
-void removeSocket(const int& SOCKET_TO_DELETE, vector<int>& sockets) {
+void removeSocket(const Client& CLIENT_TO_DELETE, vector<Client>& clients) {
 
-	auto it = find(sockets.begin(), sockets.end(), SOCKET_TO_DELETE);
-	sockets.erase(it);
+	auto it = find(clients.begin(), clients.end(), CLIENT_TO_DELETE);
+	clients.erase(it);
 
 }
 
@@ -237,27 +253,12 @@ string getCurrentDate() {
 
 }
 
-//int allocateFontColour(vector<Client>& clients) {
-//
-//	int colors[6]{ 31,32,33,34,35,36 };
-//
-//	string color = "\u001b[";
-//
-//	for (int i = 0; i < 6; i++) {
-//
-//		for (int j = 0; j < clients.size(); j++) {
-//
-//			if (clients[j].getFontColour == colors[i]) {
-//				break;
-//			}
-//
-//
-//
-//		}
-//
-//	}
-//
-//
-//
-//
-//}
+void allocateFontColour(Client& client, const int& INDEX) {
+
+	int colors[6]{ 31,32,33,34,35,36 };
+
+	int num = INDEX % 6;
+	
+	client.setFontColour(colors[num]);
+
+}

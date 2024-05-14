@@ -12,28 +12,77 @@ int fontColour;
 
 public:
 
-Client(const int&, const string&, const int&);
+Client();
+Client(const int&, const string&);
+Client(const Client&);
 ~Client();
 
 int getSocketFD() const { return socketfd; } 
+void setSocketFD(const int& FD) { socketfd = FD;}
 string getUsername() const { return username; }
 int getFontColour() const { return fontColour; }
 void setFontColour(const int& COLOUR) { fontColour = COLOUR; }
 
-void addColourToMessage(string&);
+string addColourToMessage(string&) const;
+
+bool operator ==(const Client&);
+bool operator !=(const Client&);
 
 };
 
-Client::Client(const int& SOCKETFD, const string& USERNAME, const int& FONTCOLOUR) {
+Client::Client() {
+    socketfd = -1;
+    username = "";
+    fontColour = 0;
+}
+
+Client::Client(const int& SOCKETFD, const string& USERNAME) {
 
     socketfd = SOCKETFD;
     username = USERNAME;
-    fontColour = FONTCOLOUR;
+    fontColour = 0;
 
 }
 
-void Client::addColourToMessage(string& message) {
+Client::~Client() {}
 
-    message.insert(0, to_string(fontColour));
+Client::Client(const Client& SOURCE) {
+
+    socketfd = SOURCE.getSocketFD();
+    username = SOURCE.getUsername();
+    fontColour = SOURCE.getFontColour();
+
+}
+
+string Client::addColourToMessage(string& message) const {
+
+    string colour_pre = "\033[1;" + to_string(fontColour) + "m";
+    string colour_post = "\033[0m";
+
+    string msg = colour_pre;
+    msg += message;
+    msg += colour_post; 
+
+    return msg;
+
+}
+
+bool Client::operator==(const Client& SOURCE) {
+
+if( socketfd == SOURCE.socketfd && username == SOURCE.username) {
+        return true;
+    } else {
+        return false;
+    }
+
+}
+
+bool Client::operator!=(const Client& SOURCE) {
+
+if( socketfd != SOURCE.socketfd || username != SOURCE.username) {
+        return true;
+    } else {
+        return false;
+    }
 
 }
