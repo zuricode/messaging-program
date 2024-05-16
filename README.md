@@ -11,7 +11,7 @@ Functionality:
 
 To-Do List:
 
-- Enabling unique font colours to easy differentiate between the server and each client
+- Enabling unique font colours to easy differentiate between the server and each client - COMPLETED
 - Condense the timestamp on every message to be prettier
 
 Enjoy!
