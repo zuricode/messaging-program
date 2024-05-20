@@ -150,7 +150,7 @@ void sendMessages(int s) {
 		byteCount = send(s, msg.c_str(), size, 0);
 
 		if (byteCount < 0) {
-			cout << "Message was unable to be sent" << endl;
+			cout << "Message was unable to be sent. Quit the program." << endl;
 		}
 
 
@@ -173,13 +173,18 @@ void receiveMessages(int s) {
 		byteCount = recv(s, rBuffer, 256, 0);
 		msg = rBuffer;
 
-		if (byteCount <= 0) {
-			break;
-		}
-		else if(msg != "EXIT") {
+		if (msg != "EXIT" && msg == "exit") {
 			cout << msg << endl;
 		}
 
-	} while (msg != "EXIT");
+		else if (byteCount <= 0) {
+			cout << "--------------------------------------------------------------------------------------" << endl;
+			cout << "NOTE: Server has disconnected! No messages will be sent or received. Quit the program." << endl;
+			cout << "--------------------------------------------------------------------------------------" << endl;
+			cout << endl;
+			break;
+		}		
+
+	} while (msg != "EXIT" && msg != "exit");
 
 }
